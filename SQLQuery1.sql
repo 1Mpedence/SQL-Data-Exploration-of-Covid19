@@ -147,7 +147,7 @@ where dea.continent is not null;
 ------------------------------------------------------------------------------
 
 --Tableau Views Here!!
-
+-- Link to Tableau Dashboard - https://public.tableau.com/app/profile/harsh.anand5965/viz/Covid19DataExploration_16340554482000/Dashboard1?publish=yes
 --1. Entire World
 Select SUM(new_cases) as Total_Cases, SUM(cast(new_deaths as int)) as Total_Deaths, SUM(cast(new_deaths as int))/SUM(New_Cases)*100 as DeathPercentage
 From CovidProject..CovidDeaths
