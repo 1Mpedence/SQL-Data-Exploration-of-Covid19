@@ -53,14 +53,14 @@ order by "Total Deaths" desc;
 --Highest Infection rate Continents had sorted high to low
 select location, max(total_cases) as Infected, max(total_cases)/population as "Infection Rate"
 from CovidProject..CovidDeaths
-where continent is null and location not in ('world', 'international')
+where continent is null and location not in ('world', 'European Union', 'international')
 group by location, population
 order by "Infection Rate" desc;
 
 --Continents with their Death Rates sorted high to low
 select location, population, max(cast(total_deaths as int)) as "Total Deaths", max(cast(total_deaths as int))/population as "Death Rate"
 from CovidProject..CovidDeaths
-where continent is null and location not in ('world', 'international')
+where continent is null and location not in ('world', 'European Union', 'international')
 group by location, population
 order by "Death Rate" desc;
 
@@ -99,7 +99,7 @@ Join CovidProject..CovidVaccinations vac
 	On dea.location = vac.location
 	and dea.date = vac.date
 where dea.continent is not null 
-order by 2,3
+order by 2,3;
 
 
 --Percent Population Vaccinated Using Temp Table
@@ -125,7 +125,7 @@ Join CovidProject..CovidVaccinations vac
 where dea.continent is not null
 
 Select *, (RollingPeopleVaccinated/Population)*100 as "Percentage People Vaccinated"
-From PercentPopulationVaccinated
+From PercentPopulationVaccinated;
 
 
 --Creating Views
@@ -133,6 +133,7 @@ From PercentPopulationVaccinated
 --
 
 --Rolling People Vaccinated
+
 create view ViewPercentPopulationVaccinated as 
 Select dea.continent, dea.location, dea.date, CONVERT(float, dea.population) as Population, CONVERT(float, vac.new_vaccinations) as "New Vaccinations"
 , SUM(CONVERT(float, vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
@@ -140,4 +141,39 @@ From CovidProject..CovidDeaths dea
 Join CovidProject..CovidVaccinations vac
 	On dea.location = vac.location
 	and dea.date = vac.date
-where dea.continent is not null
+where dea.continent is not null;
+
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+
+--Tableau Views Here!!
+
+--1. Entire World
+Select SUM(new_cases) as Total_Cases, SUM(cast(new_deaths as int)) as Total_Deaths, SUM(cast(new_deaths as int))/SUM(New_Cases)*100 as DeathPercentage
+From CovidProject..CovidDeaths
+where continent is not null 
+order by 1,2;
+
+--2. Total Deaths Coutnry Wise
+Select location as Country, SUM(cast(new_deaths as float)) as "Total Death Count"
+From CovidProject..CovidDeaths
+Where continent is null 
+and location not in ('World', 'European Union', 'International')
+Group by location
+order by "Total Death Count" desc;
+
+--3. Population Infected Country Wise
+Select Location, Population, MAX(total_cases) as HighestInfectionCount,  Max((total_cases/population))*100 as PercentPopulationInfected
+From CovidProject..CovidDeaths
+Where continent is not null 
+Group by Location, Population
+order by PercentPopulationInfected desc;
+
+--4. Population vaccinated Country Wise
+select vac.location, dea.population, Max(convert(float, vac.people_vaccinated)) as PopulationVaccinated, (Max(convert(float, vac.people_vaccinated))/dea.population)*100  as TotalVaccinated
+from CovidProject..CovidVaccinations vac
+join CovidProject..CovidDeaths dea
+on dea.location = vac.location and dea.date = vac.date
+where vac.continent is not null
+Group by vac.location, dea.population
+order by TotalVaccinated desc
